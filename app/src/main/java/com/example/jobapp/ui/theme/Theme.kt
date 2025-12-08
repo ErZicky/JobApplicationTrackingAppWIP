@@ -1,15 +1,19 @@
 package com.example.jobapp.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
     primary = CPrimary,
@@ -31,7 +35,8 @@ private val LightColorScheme = lightColorScheme(
     error = CError,
     onError = Color.White,
 
-    outline = CDividers
+    outline = CDividers,
+
 
 )
 
@@ -53,6 +58,21 @@ fun JobAppTheme(
         // 2. Fallback: Usa sempre il tuo schema di colori Light personalizzato
         else -> LightColorScheme
     }
+    val view = LocalView.current
+    SideEffect {
+
+        val window = (view.context as? Activity)?.window ?: return@SideEffect
+
+        WindowCompat.getInsetsController(window, view)?.let { controller ->
+
+           //status bar icons (i want them dark so true because they are on the light theme)
+            controller.isAppearanceLightStatusBars = true
+
+            //navigation bar/buttons
+            controller.isAppearanceLightNavigationBars = false
+        }
+    }
+
 
     // Questa funzione MaterialTheme applica i colori, la tipografia e le forme
     MaterialTheme(

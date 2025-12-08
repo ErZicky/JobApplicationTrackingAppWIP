@@ -13,12 +13,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,6 +92,7 @@ fun NavBarContent(items: List<NavBarItem>, selectedIndex : Int, onItemClicked: (
         modifier = Modifier
             .wrapContentHeight()
             .padding(horizontal = 16.dp, vertical = 18.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars),
     )
     {
         Row(
@@ -132,6 +137,7 @@ fun NavBarContent(items: List<NavBarItem>, selectedIndex : Int, onItemClicked: (
                 fontWeight = FontWeight.Normal,
                 text = "+",
                 color = CBackgroundColor,
+                textAlign = TextAlign.Center,
                 fontSize = 50.sp
             )
         }

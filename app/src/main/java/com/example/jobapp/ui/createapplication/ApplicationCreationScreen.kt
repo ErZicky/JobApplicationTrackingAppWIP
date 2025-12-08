@@ -13,14 +13,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fitInside
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -28,6 +31,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +67,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -71,10 +76,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.jobapp.ui.theme.CPrimary
-
+import java.net.URL
 
 
 var selectedMillis : Long?  = Date().time;
+
+var statusOptions = listOf("Submitted", "Rejected", "Interviewing", "Rejected after interviews" ,"No answer", "+ add status")
+var selectedStatus = statusOptions[0]
 @Composable
 fun ApplicationCreationScreen(
     onDismiss : () -> Unit,
@@ -85,6 +93,14 @@ fun ApplicationCreationScreen(
     var positionField by remember { mutableStateOf("") }
     var jobLinkField by remember { mutableStateOf("") }
     var companyLinkField  by remember { mutableStateOf("") }
+    var domain : String?
+
+
+
+
+
+
+
 
     Scaffold(
 
@@ -97,7 +113,7 @@ fun ApplicationCreationScreen(
 
                 onSaveApplication =
                     {
-                        viewModel.onSaveClicked(companyField, positionField, "testStatus", jobLinkField, companyLinkField, selectedMillis!! )
+                        viewModel.onSaveClicked(companyField, positionField, selectedStatus, jobLinkField, companyLinkField, selectedMillis!!)
                         onDismiss();
                     },
 
@@ -145,10 +161,16 @@ fun ApplicationCreationScreen(
                     {
 
 
+
+                        if(!companyLinkField.replace(" ", "").isEmpty())
+                            domain = companyLinkField
+                        else
+                            domain = jobLinkField
+
                         AsyncImage(
                             model = coil.request.ImageRequest.Builder(LocalContext.current)
 
-                                .data("https://www.google.com/s2/favicons?sz=256&domain=" + companyLinkField)
+                                .data("https://www.google.com/s2/favicons?sz=256&domain=" + domain)
                                 .crossfade(true)
                                 .build(),
                             contentDescription = "Company logo" ,
@@ -166,6 +188,9 @@ fun ApplicationCreationScreen(
 
 
                     OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         value = companyField,
                         onValueChange = { companyField = it },
                         label = { Text("Company name") }
@@ -173,12 +198,19 @@ fun ApplicationCreationScreen(
                     )
 
                     OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+
                         value = positionField,
                         onValueChange = { positionField = it },
                         label = { Text("Position title") }
 
                         )
                     OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         value = jobLinkField,
                         onValueChange = { jobLinkField = it },
                         label = { Text("Job listing link (optional)") }
@@ -187,15 +219,20 @@ fun ApplicationCreationScreen(
 
                     OutlinedTextField(
 
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
                         value = companyLinkField,
                         onValueChange = { companyLinkField = it },
-                        label = { Text("Company website (used for the icon, will use the icon fetched from the job listing link if empty)") }
+                        label = { Text("Company website (use it to override icon fetched from the job listing link)") }
 
                     )
 
-                    DatePickerField(label = "When you applied?")
+                    dropDownField("Initial Status:", modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
 
-                 //   DropdownMenu() { } status
+                    DatePickerField(label = "When you applied?",modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+
+
 
                     Text(
                         text = "where you applied? (qui sotto ci sarà una mappa)"
@@ -237,7 +274,7 @@ fun DatePickerField(
         onValueChange = { },
         label = { Text(label) },
         readOnly = true, // Impedisce la comparsa della tastiera
-
+        modifier = modifier,
         trailingIcon = {
             Image(
                painter = painterResource(id = com.example.jobapp.R.drawable.calendarico),
@@ -246,7 +283,7 @@ fun DatePickerField(
                 // **Il modificatore .clickable deve essere applicato direttamente all'Icona**
                 modifier = Modifier
                     .size(40.dp)
-                    .clickable {showDatePicker = true}
+                    .clickable { showDatePicker = true }
             )
         },
     )
@@ -296,6 +333,62 @@ fun DatePickerField(
 }
 
 
+@Composable
+fun dropDownField(
+
+    label: String,
+    modifier: Modifier = Modifier,
+
+)
+{
+
+
+    var isStatusMenuExpanded by remember { mutableStateOf(false) } // Stato per gestire l'apertura/chiusura del menu
+
+
+    Box {
+        // Questo OutlinedTextField mostra la selezione e apre il menu al click
+        OutlinedTextField(
+            value = selectedStatus,
+            onValueChange = { /* Non facciamo nulla qui, è di sola lettura */ },
+            label = { Text(label) },
+            readOnly = true, // Impedisce la modifica tramite tastiera
+            modifier = modifier,
+            trailingIcon = {
+                Image(
+                    painter = painterResource(id = com.example.jobapp.R.drawable.droparrow),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(CPrimary),
+                    contentDescription = "Open status menu",
+                    modifier = Modifier.clickable { isStatusMenuExpanded = true }
+
+                )
+            },
+
+        )
+
+        // Questo è il menu a tendina vero e proprio
+        DropdownMenu(
+            expanded = isStatusMenuExpanded,
+            onDismissRequest = { isStatusMenuExpanded = false } // Chiude il menu se si clicca fuori
+        ) {
+            for(status in statusOptions)
+            {
+                DropdownMenuItem(
+                    text = {Text(status)},
+                    modifier = Modifier
+                        .background(CBackgroundColor),
+                  //      .border(1.dp, CText),
+                    onClick = {
+                        selectedStatus = status
+                        isStatusMenuExpanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
 fun convertMillisToDate(millis: Long): String {
     val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return formatter.format(Date(millis))
@@ -324,7 +417,9 @@ fun bottomButtonsBar( onCancelApplication: () -> Unit ,onSaveApplication: () -> 
 
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 16.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars),
+
         contentAlignment = Alignment.Center
     )
     {
@@ -369,7 +464,7 @@ fun bottomButtonsBar( onCancelApplication: () -> Unit ,onSaveApplication: () -> 
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                   // .size(56.dp)
+                    // .size(56.dp)
                     .padding(horizontal = 6.dp)
                     .height(56.dp)
                     .width(100.dp)
@@ -388,7 +483,7 @@ fun bottomButtonsBar( onCancelApplication: () -> Unit ,onSaveApplication: () -> 
                     colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(CBackgroundColor),
                     modifier = Modifier
                         .size(40.dp)
-                        .clickable{onSaveApplication()}
+                        .clickable { onSaveApplication() }
                 )
             }
 
