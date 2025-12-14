@@ -108,18 +108,23 @@ fun ApplicationCard(app: Application,onClick: (Application) -> Unit)
                  context.startActivity(intent);
              }
 
-             Image(
-                 painter = painterResource(id = R.drawable.angulararrow),
-                 contentDescription = null,
-                 contentScale = ContentScale.Crop,
-                 colorFilter = ColorFilter.tint(CBackgroundColor),
-                 modifier = Modifier
-                     .align (Alignment.TopEnd)
-                     .offset(-10.dp, 0.dp)
-                     .size(50.dp)
-                     .clickable(onClick = onClickLink)
 
-             )
+             if(decideArrowPresence(app.link))
+             {
+                 Image(
+                     painter = painterResource(id = R.drawable.angulararrow),
+                     contentDescription = null,
+                     contentScale = ContentScale.Crop,
+                     colorFilter = ColorFilter.tint(CBackgroundColor),
+                     modifier = Modifier
+                         .align (Alignment.TopEnd)
+                         .offset(-10.dp, 0.dp)
+                         .size(50.dp)
+                         .clickable(onClick = onClickLink)
+
+                 )
+             }
+
 
              AsyncImage(
                  model = coil.request.ImageRequest.Builder(LocalContext.current)
@@ -171,7 +176,7 @@ fun ApplicationCard(app: Application,onClick: (Application) -> Unit)
                      text = "Status: ${app.status}",
                      style = MaterialTheme.typography.bodyMedium,
                      fontWeight = FontWeight.Medium,
-                     color = CError
+                     color = decideColor(app.status)
                  )
 
              }
@@ -179,6 +184,23 @@ fun ApplicationCard(app: Application,onClick: (Application) -> Unit)
     }
 }
 
+
+private fun decideArrowPresence(link : String) : Boolean
+{
+
+    if(link.isEmpty() )
+        return false
+    else
+        return true;
+}
+
+private fun decideColor(text : String) : Color
+{
+    if(text == "Rejected")
+        return CError
+    else
+        return CBackgroundColor
+}
 
 @Preview
 @Composable

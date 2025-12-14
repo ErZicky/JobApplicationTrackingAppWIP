@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.jobapp.JobApplicationAppHolder
 import com.example.jobapp.data.model.Application
+import com.example.jobapp.data.model.Status
 import com.example.jobapp.data.repository.OfflineApplicationsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,14 +36,14 @@ class ApplicationCreationViewModel(private val repository: OfflineApplicationsRe
 
           var companyLinkManipulated : String? = companyLink
 
-            if(companyLink == "")
-                companyLinkManipulated = null
+
+          if(companyLink == "")
+               companyLinkManipulated = null
 
             saveApplication(company, role, status, link, companyLinkManipulated, date)
         }
 
     }
-
     //like static in java
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

@@ -42,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,18 +76,21 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.jobapp.data.model.Status
 import com.example.jobapp.ui.theme.CPrimary
+import com.example.jobapp.ui.createapplication.AddStatusDialog
 import java.net.URL
 
 
 var selectedMillis : Long?  = Date().time;
 
-var statusOptions = listOf("Submitted", "Rejected", "Interviewing", "Rejected after interviews" ,"No answer", "+ add status")
-var selectedStatus = statusOptions[0]
+var statusOptions =  mutableListOf<Status>()
+var selectedStatus = "Submitted"
 @Composable
 fun ApplicationCreationScreen(
     onDismiss : () -> Unit,
-    viewModel: ApplicationCreationViewModel = viewModel(factory = ApplicationCreationViewModel.Factory))
+    viewModel: ApplicationCreationViewModel = viewModel(factory = ApplicationCreationViewModel.Factory),
+    statusViewModel: StatusViewModel = viewModel(factory = StatusViewModel.Factory))
 {
 
     var companyField by remember { mutableStateOf("") }
@@ -97,6 +101,14 @@ fun ApplicationCreationScreen(
 
 
 
+
+  //  statusViewModel.onDialogSubmit("ciao");
+    val statusOptionsTmp by statusViewModel.statusList.collectAsState()
+
+
+
+    statusOptions = statusOptionsTmp as MutableList<Status>;
+    statusOptions.add(Status(0,"+ new status"))
 
 
 
@@ -228,7 +240,7 @@ fun ApplicationCreationScreen(
 
                     )
 
-                    dropDownField("Initial Status:", modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+                    dropDownField("Initial Status:", modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), onDialogSubmit = {statusViewModel.onDialogSubmit(it)})
 
                     DatePickerField(label = "When you applied?",modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
 
@@ -338,12 +350,15 @@ fun dropDownField(
 
     label: String,
     modifier: Modifier = Modifier,
+    onDialogSubmit: (value : String) -> Unit
 
 )
 {
 
 
     var isStatusMenuExpanded by remember { mutableStateOf(false) } // Stato per gestire l'apertura/chiusura del menu
+    var showAddStatusDialog by remember { mutableStateOf(false) }
+
 
 
     Box {
@@ -371,22 +386,42 @@ fun dropDownField(
             expanded = isStatusMenuExpanded,
             onDismissRequest = { isStatusMenuExpanded = false } // Chiude il menu se si clicca fuori
         ) {
-            for(status in statusOptions)
+            for(statusItem in statusOptions)
             {
                 DropdownMenuItem(
-                    text = {Text(status)},
+                    text = {Text(statusItem.status)},
                     modifier = Modifier
                         .background(CBackgroundColor),
                   //      .border(1.dp, CText),
                     onClick = {
-                        selectedStatus = status
+                        selectedStatus = statusItem.status
                         isStatusMenuExpanded = false
+                        if(selectedStatus == statusOptions.get(statusOptions.size-1).status)
+                        {
+                            showAddStatusDialog = true;
+                        }
                     }
                 )
             }
         }
     }
+
+    if(showAddStatusDialog)
+    {
+        AddStatusDialog(
+            onDismiss = {
+                selectedStatus = statusOptions[0].status
+                showAddStatusDialog = false},
+            onSubmit = {
+                onDialogSubmit(it)
+                showAddStatusDialog = false
+            }
+
+        )
+    }
+
 }
+
 
 
 fun convertMillisToDate(millis: Long): String {
@@ -398,6 +433,7 @@ fun convertDateisToString(date: Date): String {
     val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return formatter.format(date)
 }
+
 
 
 @Composable

@@ -3,12 +3,14 @@ package com.example.jobapp.data
 import android.content.Context
 import com.example.jobapp.data.dao.ApplicationDao
 import com.example.jobapp.data.repository.OfflineApplicationsRepository
+import com.example.jobapp.data.repository.OfflineStatusRepository
 
 //a simple helper to get the DB instance around the app more cleanly, to avoid to write everytime:
 // val repo = OfflineApplicationsRepository(AppDatabase.getDatabase(myContext).applicationDao())
 
 interface AppContainer {
     val applicationsRepository: OfflineApplicationsRepository
+    val statusRepository: OfflineStatusRepository
 }
 
 class DependencyContainer (private val context: Context) : AppContainer{
@@ -18,5 +20,10 @@ class DependencyContainer (private val context: Context) : AppContainer{
         //Ottiene o crea instanza Database. -> Dal database estrae il DAO. -> Passa il DAO al Repository. che fa le associazioni
         val dbDao = AppDatabase.getDatabase(context).applicationDao();
         OfflineApplicationsRepository(dbDao)
+    }
+
+    override val statusRepository: OfflineStatusRepository by lazy {
+        val dbDao = AppDatabase.getDatabase(context).statusDao();
+        OfflineStatusRepository(dbDao)
     }
 }
