@@ -207,7 +207,7 @@ private fun decideColor(text : String) : Color
 private fun ApplicationCardPreview() {
 
     ApplicationCard(
-        Application(1, "Meta", "Android Developer", "rifiutato", 0L, "google.com", null),
+        Application(1, "Meta", "Android Developer", "rifiutato", 0L, "google.com", null, null, null,null),
         onClick = {}
     )
 

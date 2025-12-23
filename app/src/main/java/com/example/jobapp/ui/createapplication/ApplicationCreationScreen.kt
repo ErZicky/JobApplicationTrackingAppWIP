@@ -62,6 +62,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -79,13 +80,37 @@ import coil.compose.AsyncImage
 import com.example.jobapp.data.model.Status
 import com.example.jobapp.ui.theme.CPrimary
 import com.example.jobapp.ui.createapplication.AddStatusDialog
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
 import java.net.URL
-
+import android.location.Geocoder
+import android.preference.PreferenceManager
+import android.view.ViewGroup
+import androidx.compose.foundation.gestures.snapping.SnapPosition.Center.position
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import coil.request.ImageRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import java.io.IOException
 
 var selectedMillis : Long?  = Date().time;
 
 var statusOptions =  mutableListOf<Status>()
 var selectedStatus = "Submitted"
+
+
+
 @Composable
 fun ApplicationCreationScreen(
     onDismiss : () -> Unit,
@@ -93,24 +118,36 @@ fun ApplicationCreationScreen(
     statusViewModel: StatusViewModel = viewModel(factory = StatusViewModel.Factory))
 {
 
+    val context = LocalContext.current
+
+    //osm configuration
+    remember {
+        Configuration.getInstance().load(context, PreferenceManager.getDefaultSharedPreferences(context))
+        Configuration.getInstance().userAgentValue = context.packageName // Identifica la tua app
+        true
+    }
+
+
     var companyField by remember { mutableStateOf("") }
     var positionField by remember { mutableStateOf("") }
     var jobLinkField by remember { mutableStateOf("") }
     var companyLinkField  by remember { mutableStateOf("") }
+    var companyLocation  by remember { mutableStateOf("") }
     var domain : String?
 
 
+    val mapCenter by viewModel.mapCenter.collectAsState()
+    val mapZoom by viewModel.mapZoom.collectAsState()
+    val markerPoint by viewModel.markerPoint.collectAsState()
+    val markerPointOverlay by viewModel.markerPointTitle.collectAsState()
 
 
-  //  statusViewModel.onDialogSubmit("ciao");
     val statusOptionsTmp by statusViewModel.statusList.collectAsState()
 
 
 
     statusOptions = statusOptionsTmp as MutableList<Status>;
     statusOptions.add(Status(0,"+ new status"))
-
-
 
 
 
@@ -151,7 +188,8 @@ fun ApplicationCreationScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(vertical = 16.dp)
-                        .padding(paddingValues),
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState()),
 
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -180,7 +218,7 @@ fun ApplicationCreationScreen(
                             domain = jobLinkField
 
                         AsyncImage(
-                            model = coil.request.ImageRequest.Builder(LocalContext.current)
+                            model = ImageRequest.Builder(LocalContext.current)
 
                                 .data("https://www.google.com/s2/favicons?sz=256&domain=" + domain)
                                 .crossfade(true)
@@ -246,9 +284,78 @@ fun ApplicationCreationScreen(
 
 
 
-                    Text(
-                        text = "where you applied? (qui sotto ci sarà una mappa)"
+                    OutlinedTextField(
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        value = companyLocation,
+                        onValueChange = { companyLocation = it },
+                        label = { Text("Application work location (or company location)") },
+                        trailingIcon = {
+                            Image(
+                                painter = painterResource(id = com.example.jobapp.R.drawable.searchlocation),
+                                contentDescription = "search location",
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(CPrimary),
+                                // **Il modificatore .clickable deve essere applicato direttamente all'Icona**
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clickable { viewModel.searchLocation(context, companyLocation) }
+                            )
+                        }
+
                     )
+
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .padding(horizontal = 16.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(BorderStroke(1.dp, CText), RoundedCornerShape(12.dp))
+                    )
+                    {
+                        AndroidView(
+                            modifier = Modifier.fillMaxSize(),
+                            factory = { ctx ->
+                                MapView(ctx).apply {
+                                    setTileSource(TileSourceFactory.MAPNIK)
+                                    isTilesScaledToDpi = true
+                                    setMultiTouchControls(false)
+                                    tilesScaleFactor = 1.8f
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
+                                }
+                            },
+                            update = { view ->
+                                // camera update
+                                view.controller.setCenter(mapCenter)
+                                view.controller.setZoom((mapZoom + 5))
+
+                                // Gestione Marker
+                                view.overlays.clear()
+                                markerPoint?.let { point ->
+                                    val marker = Marker(view)
+                                    marker.position = point
+                                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+
+                                    val iconDrawable = ContextCompat.getDrawable(view.context, com.example.jobapp.R.drawable.work)
+
+                                    iconDrawable?.setTint(android.graphics.Color.RED)
+
+                                    marker.icon = iconDrawable
+
+
+                                    marker.title = markerPointOverlay
+                                    view.overlays.add(marker)
+                                }
+                                view.invalidate()
+                            }
+                        )
+                    }
 
 
                     //   DropdownMenu() { }  change in no answer
@@ -530,6 +637,8 @@ fun bottomButtonsBar( onCancelApplication: () -> Unit ,onSaveApplication: () -> 
     }
 
 }
+
+
 
 
 

@@ -15,6 +15,7 @@ material = "1.10.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
 material3 = "1.4.0"
+osmdroidAndroid = "6.1.20"
 runtime = "1.9.4"
 uiToolingPreview = "1.9.4"
 uiTooling = "1.9.4"
@@ -22,6 +23,7 @@ volley = "1.2.1"
 lifecycleRuntimeKtx = "2.9.4"
 room = "2.8.4"
 ksp = "2.0.21-1.0.26"
+playServicesMaps = "19.2.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -42,6 +44,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "uiToolingPreview" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
+osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 volley = { group = "com.android.volley", name = "volley", version.ref = "volley" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -51,6 +54,7 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

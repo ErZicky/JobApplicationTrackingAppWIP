@@ -16,6 +16,9 @@ data class Application(
     val date: Long,
     val link: String,
     val companyWebsite: String?,
+    val companyLocation : String?,
+    val companyLatitude : Double?,
+    val companyLongitude : Double?
 
 
     )
